@@ -28,6 +28,10 @@ export const env = {
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
 
   REDIS_QUEUE_KEY: process.env.REDIS_QUEUE_KEY || 'taskflow:queue:solicitudes',
+  // Canal de Redis Pub/Sub usado por el Worker (proceso aparte, sin Socket.IO)
+  // para avisarle al backend que cambió el estado de una solicitud. El backend
+  // se suscribe y retransmite por Socket.IO a los clientes Vue conectados.
+  REDIS_EVENTS_CHANNEL: process.env.REDIS_EVENTS_CHANNEL || 'taskflow:eventos',
   CACHE_TTL_SECONDS: Number(process.env.CACHE_TTL_SECONDS) || 60,
   CACHE_KEY_ESTADISTICAS: 'taskflow:cache:estadisticas',
   CACHE_KEY_SOLICITUDES_LISTADO: 'taskflow:cache:solicitudes:listado',

@@ -4,6 +4,7 @@ import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { redisClient } from './config/redis.js';
 import { initSocket } from './config/socket.js';
+import { initPubSub, closePubSub } from './config/pubsub.js';
 
 /**
  * Punto de arranque real del API:
@@ -19,6 +20,7 @@ async function start() {
 
   const httpServer = http.createServer(app);
   initSocket(httpServer);
+  initPubSub(); // escucha los eventos que publique el Worker y los retransmite por Socket.IO
 
   httpServer.listen(env.PORT, () => {
     console.log(`[server] TaskFlow backend escuchando en el puerto ${env.PORT} (${env.NODE_ENV})`);
@@ -27,6 +29,7 @@ async function start() {
   const shutdown = async (signal) => {
     console.log(`[server] Señal ${signal} recibida, cerrando de forma ordenada...`);
     httpServer.close(() => console.log('[server] HTTP cerrado'));
+    await closePubSub();
     await redisClient.quit();
     process.exit(0);
   };
