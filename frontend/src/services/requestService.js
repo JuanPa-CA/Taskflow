@@ -28,7 +28,7 @@ export const requestService = {
 
   async getSolicitud(id) {
     const response = await apiClient.get(`/solicitudes/${id}`)
-    return response.data
+    return response.data.solicitud || response.data.data || response.data
   },
 
   async crearSolicitud(datos) {

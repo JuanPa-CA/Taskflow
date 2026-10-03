@@ -144,7 +144,7 @@
             </div>
             <div class="card-body">
               <p class="error-text">
-                {{ solicitud.mensajeError || 'Ocurrió un error inesperado al procesar la solicitud.' }}
+                No fue posible procesar esta solicitud. Inténtalo de nuevo más tarde o contacta al equipo de soporte.
               </p>
             </div>
           </div>

@@ -3,7 +3,8 @@ import { ref } from 'vue'
 
 export const isSocketConnected = ref(false)
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || API_URL.replace(/\/api\/?$/, '')
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,

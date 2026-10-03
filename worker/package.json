@@ -1,0 +1,18 @@
+{
+  "name": "taskflow-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Procesador asíncrono de solicitudes en TASKFLOW",
+  "type": "module",
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js",
+    "dev": "node --watch src/worker.js",
+    "check": "node --check src/worker.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.4.2",
+    "mongoose": "^8.9.5"
+  }
+}

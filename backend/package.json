@@ -11,7 +11,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js",
+    "test": "node --test tests/sanitizarSolicitud.test.js",
+    "test:socket": "node scripts/test-socket-integration.mjs"
   },
   "keywords": [
     "taskflow",
@@ -34,7 +36,7 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "socket.io-client": "^4.8.4"
   }
 }
-

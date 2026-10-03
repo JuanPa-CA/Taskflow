@@ -5,15 +5,15 @@ import * as solicitudesService from '../services/solicitudes.service.js';
  */
 export async function registrar(req, res, next) {
   try {
-    const { titulo, descripcion, categoria, prioridad } = req.body;
-    const solicitud = await solicitudesService.crearSolicitud({
-      titulo,
-      descripcion,
-      categoria,
-      prioridad,
-    });
+    const { solicitud, cola } = await solicitudesService.crearSolicitud(req.body);
 
-    res.status(201).json({ ok: true, data: solicitud });
+    res.status(201).json({
+      ok: true,
+      enCola: cola.encolada,
+      posicionCola: cola.longitud,
+      solicitud,
+      data: solicitud,
+    });
   } catch (error) {
     next(error);
   }
@@ -24,16 +24,26 @@ export async function registrar(req, res, next) {
  */
 export async function listar(req, res, next) {
   try {
-    const { estado, categoria, buscar, page, limit } = req.query;
+    const { estado, categoria, prioridad, page, limit } = req.query;
+    const buscar = req.query.buscar || req.query.search;
     const resultado = await solicitudesService.listarSolicitudes({
       estado,
       categoria,
+      prioridad,
       buscar,
       page,
       limit,
     });
 
-    res.json({ ok: true, ...resultado });
+    const cache = resultado.origen === 'cache' ? 'HIT' : 'MISS';
+    res.set('X-Cache', cache);
+    res.json({
+      ok: true,
+      ...resultado.data,
+      solicitudes: resultado.data.items,
+      cache,
+      origen: cache === 'HIT' ? 'REDIS' : 'MONGODB',
+    });
   } catch (error) {
     next(error);
   }
@@ -50,7 +60,7 @@ export async function obtenerPorId(req, res, next) {
       return res.status(404).json({ ok: false, mensaje: 'Solicitud no encontrada' });
     }
 
-    res.json({ ok: true, data: solicitud });
+    res.json({ ok: true, solicitud, data: solicitud });
   } catch (error) {
     next(error);
   }
@@ -67,10 +77,19 @@ export async function obtenerRespuesta(req, res, next) {
       return res.status(404).json({ ok: false, mensaje: 'Solicitud no encontrada' });
     }
 
-    res.json({ ok: true, data: solicitud });
+    res.json({ ok: true, solicitud, data: solicitud });
   } catch (error) {
     next(error);
   }
 }
 
-export default { registrar, listar, obtenerPorId, obtenerRespuesta };
+export async function eliminar(req, res, next) {
+  try {
+    const solicitud = await solicitudesService.eliminarSolicitud(req.params.id);
+    res.json({ ok: true, id: solicitud.id, mensaje: 'Solicitud eliminada correctamente' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export default { registrar, listar, obtenerPorId, obtenerRespuesta, eliminar };

@@ -15,12 +15,14 @@ export const ESTADOS = Object.freeze({
 export const ESTADOS_VALIDOS = Object.values(ESTADOS);
 
 export const PRIORIDADES = Object.freeze({
-  BAJA: 'baja',
-  MEDIA: 'media',
-  ALTA: 'alta',
+  BAJA: 'Baja',
+  MEDIA: 'Media',
+  ALTA: 'Alta',
 });
 
 export const PRIORIDADES_VALIDAS = Object.values(PRIORIDADES);
+export const MENSAJE_ERROR_SOLICITUD =
+  'No fue posible procesar esta solicitud. Inténtalo de nuevo más tarde o contacta al equipo de soporte.';
 
 // Las 5 categorías mínimas exigidas por el taller (HU-06 / punto 7 del taller).
 // El Worker debe usar esta misma lista para escoger la regla de respuesta;

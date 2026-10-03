@@ -23,32 +23,32 @@
     <div class="grid-stats">
       <StatCard
         titulo="Total Solicitudes"
-        :valor="store.totalSolicitudes"
+        :valor="store.metricas.total"
         tipo="total"
       />
       <StatCard
         titulo="Pendientes"
-        :valor="store.pendientesCount"
+        :valor="store.metricas.pendientes"
         tipo="pendiente"
       />
       <StatCard
-        titulo="En Cola"
-        :valor="store.enColaCount"
+        titulo="En Cola (Redis)"
+        :valor="store.metricas.enCola"
         tipo="encola"
       />
       <StatCard
         titulo="Procesando"
-        :valor="store.procesandoCount"
+        :valor="store.metricas.procesando"
         tipo="procesando"
       />
       <StatCard
         titulo="Respondidas"
-        :valor="store.respondidasCount"
+        :valor="store.metricas.respondidas"
         tipo="respondida"
       />
       <StatCard
         titulo="Errores"
-        :valor="store.erroresCount"
+        :valor="store.metricas.errores"
         tipo="error"
       />
     </div>
@@ -84,7 +84,7 @@
       <div class="section-header">
         <h2 class="section-title">Solicitudes Recientes</h2>
         <router-link to="/solicitudes" class="btn btn-secondary btn-sm">
-          Ver todas ({{ store.totalSolicitudes }}) &rarr;
+          Ver todas ({{ store.metricas.total }}) &rarr;
         </router-link>
       </div>
 

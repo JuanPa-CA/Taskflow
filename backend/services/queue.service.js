@@ -15,7 +15,7 @@ const QUEUE_KEY = env.REDIS_QUEUE_KEY;
  * (FIFO: el primero en entrar es el primero en salir).
  */
 export async function encolarSolicitud(solicitudId) {
-  await redisClient.lpush(QUEUE_KEY, String(solicitudId));
+  return redisClient.lpush(QUEUE_KEY, String(solicitudId));
 }
 
 /**
@@ -26,4 +26,8 @@ export async function longitudCola() {
   return redisClient.llen(QUEUE_KEY);
 }
 
-export default { encolarSolicitud, longitudCola, QUEUE_KEY };
+export async function desencolarSolicitud(solicitudId) {
+  return redisClient.lrem(QUEUE_KEY, 0, String(solicitudId));
+}
+
+export default { encolarSolicitud, longitudCola, desencolarSolicitud, QUEUE_KEY };

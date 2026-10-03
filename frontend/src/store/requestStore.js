@@ -2,6 +2,15 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { requestService } from '@/services/requestService'
 
+const MENSAJE_ERROR_USUARIO = 'No fue posible procesar esta solicitud. Inténtalo de nuevo más tarde o contacta al equipo de soporte.'
+const ORDEN_ESTADOS = {
+  PENDIENTE: 0,
+  'EN COLA': 1,
+  PROCESANDO: 2,
+  RESPONDIDA: 3,
+  ERROR: 3
+}
+
 export const useRequestStore = defineStore('requestStore', () => {
   const solicitudes = ref([])
   const loading = ref(false)
@@ -22,7 +31,10 @@ export const useRequestStore = defineStore('requestStore', () => {
   })
 
   const metricas = ref({
+    total: 0,
+    pendientes: 0,
     enCola: 0,
+    enColaDocumentos: 0,
     procesando: 0,
     respondidas: 0,
     errores: 0
@@ -165,7 +177,12 @@ export const useRequestStore = defineStore('requestStore', () => {
     const id = item._id || item.id
     const index = solicitudes.value.findIndex(s => (s._id || s.id) === id)
     if (index !== -1) {
-      solicitudes.value[index] = { ...solicitudes.value[index], ...item }
+      const anterior = solicitudes.value[index]
+      const actualizada = { ...anterior, ...item }
+      if ((ORDEN_ESTADOS[anterior.estado] ?? -1) > (ORDEN_ESTADOS[item.estado] ?? -1)) {
+        actualizada.estado = anterior.estado
+      }
+      solicitudes.value[index] = actualizada
     } else {
       solicitudes.value.unshift(item)
     }
@@ -186,8 +203,13 @@ export const useRequestStore = defineStore('requestStore', () => {
     if (id) {
       const item = solicitudes.value.find(s => (s._id || s.id) === id)
       if (item) {
-        item.estado = 'EN COLA'
+        const estadoActual = item.estado
         if (data.solicitud) Object.assign(item, data.solicitud)
+        if (['PROCESANDO', 'RESPONDIDA', 'ERROR'].includes(estadoActual)) {
+          item.estado = estadoActual
+        } else {
+          item.estado = data.solicitud?.estado || 'EN COLA'
+        }
       } else if (data.solicitud) {
         upsertSolicitud(data.solicitud)
       }
@@ -233,13 +255,13 @@ export const useRequestStore = defineStore('requestStore', () => {
     if (id) {
       const item = solicitudes.value.find(s => (s._id || s.id) === id)
       if (item) {
-        item.estado = 'ERROR'
-        item.mensajeError = data.mensajeError || data.error || 'Error durante el procesamiento'
         if (data.solicitud) Object.assign(item, data.solicitud)
+        item.estado = 'ERROR'
+        item.mensajeError = MENSAJE_ERROR_USUARIO
       } else if (data.solicitud) {
-        upsertSolicitud(data.solicitud)
+        upsertSolicitud({ ...data.solicitud, estado: 'ERROR', mensajeError: MENSAJE_ERROR_USUARIO })
       }
-      addLog('error', `[Socket] Error procesando solicitud #${id}: ${data.mensajeError || data.error || ''}`)
+      addLog('error', `[Socket] Error controlado al procesar solicitud #${id}`)
       addToast('error', `Error en solicitud #${id.toString().slice(-6)}`)
     }
   }

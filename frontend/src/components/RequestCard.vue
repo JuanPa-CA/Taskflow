@@ -20,8 +20,8 @@
         <strong>Respuesta:</strong> {{ solicitud.respuesta }}
       </div>
 
-      <div v-if="solicitud.mensajeError" class="error-preview">
-        <strong>Error:</strong> {{ solicitud.mensajeError }}
+      <div v-if="solicitud.estado === 'ERROR'" class="error-preview">
+        <strong>Error:</strong> No fue posible procesar esta solicitud. Inténtalo de nuevo más tarde o contacta al equipo de soporte.
       </div>
     </div>
 

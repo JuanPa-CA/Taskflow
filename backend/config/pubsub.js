@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { env } from './env.js';
 import { getIO } from './socket.js';
 import { EVENTOS_SOCKET } from './constants.js';
+import { obtenerMonitor } from '../services/monitor.service.js';
 
 /**
  * El Worker corre en un proceso/contenedor aparte y NO tiene Socket.IO
@@ -38,7 +39,7 @@ export function initPubSub() {
     console.log('[pubsub] suscrito a', env.REDIS_EVENTS_CHANNEL, '(eventos del Worker)');
   });
 
-  subscriber.on('message', (_channel, rawMessage) => {
+  subscriber.on('message', async (_channel, rawMessage) => {
     let mensaje;
     try {
       mensaje = JSON.parse(rawMessage);
@@ -55,7 +56,25 @@ export function initPubSub() {
       return;
     }
 
-    getIO().emit(evento, data);
+    const io = getIO();
+    io.emit(evento, data);
+    if ([
+      EVENTOS_SOCKET.SOLICITUD_PROCESANDO,
+      EVENTOS_SOCKET.SOLICITUD_RESPONDIDA,
+      EVENTOS_SOCKET.SOLICITUD_ERROR,
+    ].includes(evento)) {
+      try {
+        const monitor = await obtenerMonitor();
+        io.emit(EVENTOS_SOCKET.MONITOR_ACTUALIZADO, monitor);
+        io.emit(EVENTOS_SOCKET.COLA_ACTUALIZADA, {
+          servicios: monitor.servicios,
+          metricas: monitor.metricas,
+          cola: monitor.cola,
+        });
+      } catch (error) {
+        console.error('[pubsub] no se pudo actualizar el monitor:', error.message);
+      }
+    }
   });
 
   subscriber.on('error', (err) => {

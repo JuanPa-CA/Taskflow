@@ -99,12 +99,19 @@ Taskflow/
 │   ├── .dockerignore
 │   └── package.json
 │
-├── backend/                      # API REST con Express.js y Socket.IO (en desarrollo)
+├── backend/                      # API REST con Express.js y Socket.IO
+│   ├── config/                   # MongoDB, Redis, Socket.IO y Pub/Sub
+│   ├── controllers/               # Controladores HTTP
+│   ├── models/                    # Esquemas MongoDB
+│   ├── routes/                    # Endpoints bajo /api
+│   ├── services/                  # Solicitudes, cola, caché y monitor
 │   ├── Dockerfile
 │   └── package.json
 │
-├── worker/                       # Consumidor asíncrono Node.js (en desarrollo)
+├── worker/                       # Consumidor asíncrono Node.js de la cola Redis
+│   ├── src/worker.js
 │   ├── Dockerfile
+│   ├── .env.example
 │   └── package.json
 │
 ├── docker-compose.yml            # Orquestación de los 5 servicios
@@ -119,11 +126,11 @@ Taskflow/
 
 | Pantalla | Ruta | Descripción |
 |---|---|---|
-| **Dashboard** | `/` | Resumen general con tarjetas métricas de solicitudes (Total, Pendientes, En Cola, Procesando, Respondidas, Errores), estado de salud de servicios y solicitudes recientes. |
+| **Dashboard** | `/` | Resumen general con tarjetas métricas de solicitudes (Total, Pendientes, En Cola Redis, Procesando, Respondidas, Errores), estado de salud de servicios y solicitudes recientes. Sus métricas usan la misma fuente que el monitor. |
 | **Nueva Solicitud** | `/solicitudes/nueva` | Formulario reactivo con validación de campos obligatorios, categorías sugeridas, niveles de prioridad y confirmación inmediata con ID de radicado. |
 | **Gestión de Solicitudes** | `/solicitudes` | Listado tabular y en tarjetas, buscador en tiempo real, filtros por categoría, prioridad y estado, además del indicador de **Caché Redis (HU-08)**. |
 | **Detalle de Solicitud** | `/solicitudes/:id` | Visualización individual con un **Stepper interactivo del ciclo de vida**, detalles de radicación y la respuesta generada por el Worker. |
-| **Monitor del Sistema** | `/monitor` | Supervisión de los 4 componentes (Backend, Mongo, Redis, Worker), métricas de cola, módulo de prueba de caché y **Stream de eventos en tiempo real con Socket.IO**. |
+| **Monitor del Sistema** | `/monitor` | Supervisión de los 4 componentes (Backend, Mongo, Redis, Worker), longitud real de la cola Redis y estados almacenados en MongoDB, módulo de prueba de caché y **Stream de eventos en tiempo real con Socket.IO**. |
 
 ### Estados Oficiales de la Solicitud
 * 🟡 `PENDIENTE`: Solicitud recibida en el sistema.
@@ -163,7 +170,7 @@ Taskflow/
 
 4. **Acceder a los servicios:**
    * **Frontend Web:** [http://localhost](http://localhost) (Puerto 80)
-   * **Backend API:** [http://localhost:3000](http://localhost:3000)
+   * **Backend API:** [http://localhost:3000/api](http://localhost:3000/api)
    * **MongoDB:** `localhost:27017`
    * **Redis:** `localhost:6379`
 
@@ -197,6 +204,30 @@ Taskflow/
    npm run build
    ```
 
+### Opción C: Ejecución del Worker en Desarrollo Local
+
+El backend, MongoDB y Redis deben estar disponibles localmente. El archivo
+`worker/.env.example` usa `localhost`; dentro de Docker Compose, las variables
+de conexión se configuran automáticamente con los nombres de servicio
+`mongoserver` y `redisserver`.
+
+```powershell
+cd worker
+npm install
+Copy-Item .env.example .env
+npm run dev
+```
+
+### Pruebas del backend y del ciclo Socket.IO
+
+Con MongoDB, Redis, backend y Worker activos:
+
+```powershell
+cd backend
+npm test
+npm run test:socket
+```
+
 ---
 
 ## 7. Guía de Pruebas Obligatorias (Sección 17 del Taller)
@@ -209,9 +240,9 @@ Durante la sustentación ante el instructor SENA, el equipo debe evidenciar las 
 | **2** | **Respuesta** | Procesar solicitud y comprobar que genera respuesta. | Observar que el Worker toma la solicitud y en `/solicitudes/:id` aparece la respuesta automática según su categoría. |
 | **3** | **Cola** | Detener Worker, registrar 5 solicitudes y comprobar que quedan en cola. | Ejecutar `docker stop taskflow-worker`, radicar 5 solicitudes y observar en `/monitor` que aumentan en "En Cola (Redis)". |
 | **4** | **Recuperación** | Iniciar Worker y comprobar procesamiento de pendientes. | Ejecutar `docker start taskflow-worker`; el Worker consume las 5 pendientes y las pasa a `RESPONDIDA`. |
-| **5** | **Caché** | Demostrar una consulta `CACHE MISS` y luego una `CACHE HIT`. | En `/solicitudes` o `/monitor`, pulsar "Demostrar Caché (HU-08)". La 1ª consulta marcará **CACHE MISS** (MongoDB, >80ms) y la 2ª **CACHE HIT** (Redis en memoria, <15ms). |
+| **5** | **Caché** | Demostrar una consulta `CACHE MISS` y luego una `CACHE HIT`. | En `/solicitudes` o `/monitor`, pulsar "Demostrar Caché (HU-08)". La primera consulta marca **CACHE MISS** (MongoDB) y la segunda **CACHE HIT** (Redis en memoria). El tiempo se muestra para comparar y puede variar según el equipo y la carga. |
 | **6** | **Persistencia** | Reiniciar servicios y verificar que la información persiste. | Ejecutar `docker compose down` y luego `docker compose up -d`. Abrir el frontend y comprobar que todas las solicitudes continúan intactas gracias al volumen `mongo-data`. |
-| **7** | **Error** | Provocar error controlado y verificar paso a estado `ERROR`. | Registrar una solicitud con formato no procesable o simular fallo del Worker; el sistema pasa a estado `ERROR` sin bloquear las demás solicitudes. |
+| **7** | **Error** | Provocar un error controlado y verificar el estado `ERROR` sin detener el Worker. | Simular un fallo de procesamiento: el detalle muestra un mensaje seguro para el usuario; el motivo técnico queda únicamente en los logs del Worker y las demás solicitudes siguen procesándose. |
 | **8** | **Responsive** | Comprobar adaptación a diferentes pantallas. | Probar la aplicación en móvil (F12 > Toggle device toolbar) validando el menú hamburguesa, tarjetas y tabla responsive sin desbordamiento horizontal. |
 
 ---

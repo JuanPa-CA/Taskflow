@@ -19,7 +19,7 @@ for (const key of required) {
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: Number(process.env.PORT) || 4000,
+  PORT: Number(process.env.PORT) || 3000,
 
   MONGO_URI: process.env.MONGO_URI,
 
@@ -32,11 +32,16 @@ export const env = {
   // para avisarle al backend que cambió el estado de una solicitud. El backend
   // se suscribe y retransmite por Socket.IO a los clientes Vue conectados.
   REDIS_EVENTS_CHANNEL: process.env.REDIS_EVENTS_CHANNEL || 'taskflow:eventos',
+  REDIS_HEARTBEAT_KEY: process.env.REDIS_HEARTBEAT_KEY || 'taskflow:worker:heartbeat',
+  HEARTBEAT_TTL_SECONDS: Number(process.env.HEARTBEAT_TTL_SECONDS) || 30,
   CACHE_TTL_SECONDS: Number(process.env.CACHE_TTL_SECONDS) || 60,
   CACHE_KEY_ESTADISTICAS: 'taskflow:cache:estadisticas',
   CACHE_KEY_SOLICITUDES_LISTADO: 'taskflow:cache:solicitudes:listado',
 
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  CORS_ORIGIN: (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
 
   RATE_LIMIT_WINDOW_MS: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   RATE_LIMIT_MAX: Number(process.env.RATE_LIMIT_MAX) || 100,
