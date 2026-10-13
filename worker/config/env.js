@@ -31,6 +31,10 @@ export const env = {
 
   // Canal de Redis Pub/Sub donde el Worker publica los cambios de estado.
   REDIS_EVENTS_CHANNEL: process.env.REDIS_EVENTS_CHANNEL || 'taskflow:eventos',
+
+  // Clave Redis que el Worker actualiza cada 5 s como "heartbeat"
+  // (el backend la consulta en GET /api/monitor). Debe coincidir con la del backend.
+  REDIS_WORKER_HEARTBEAT_KEY: process.env.REDIS_WORKER_HEARTBEAT_KEY || 'taskflow:worker:heartbeat',
 };
 
 export default env;

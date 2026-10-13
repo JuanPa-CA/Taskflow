@@ -164,6 +164,7 @@ onMounted(() => {
   if (store.solicitudes.length === 0) {
     store.fetchSolicitudes()
   }
+  store.testCacheQuery()
 })
 </script>
 

@@ -29,6 +29,13 @@ export const useRequestStore = defineStore('requestStore', () => {
     errores: 0
   })
 
+  const mapMetricas = (data) => ({
+    enCola: data?.enCola ?? 0,
+    procesando: data?.procesando ?? 0,
+    respondidas: data?.respondidas ?? 0,
+    errores: data?.errores ?? 0
+  })
+
   // Toasts de notificaciones en tiempo real
   const toasts = ref([])
   const addToast = (tipo, mensaje, duracion = 4500) => {
@@ -102,11 +109,7 @@ export const useRequestStore = defineStore('requestStore', () => {
       solicitudes.value = items
       total.value = typeof data.total === 'number' ? data.total : items.length
       
-      if (res?.cacheInfo) {
-        cacheInfo.value = res.cacheInfo
-        cacheHistory.value.unshift(res.cacheInfo)
-        if (cacheHistory.value.length > 10) cacheHistory.value.pop()
-      }
+
     } catch (err) {
       error.value = err.message || 'Error al conectar con la API'
     } finally {
@@ -124,15 +127,23 @@ export const useRequestStore = defineStore('requestStore', () => {
   }
 
   const fetchServicios = async () => {
+    // Métricas y caché desde /estadisticas (HU-08/HU-09)
     try {
-      const status = await requestService.getMonitorStatus()
-      if (status?.servicios) {
-        servicios.value = { ...servicios.value, ...status.servicios }
+      const stats = await requestService.getEstadisticas()
+      if (stats?.data) {
+        metricas.value = { ...metricas.value, ...mapMetricas(stats.data) }
+      }
+    } catch {
+      // si falla, se conservan las métricas previas
+    }
+
+    // Estado de los 4 servicios desde /monitor
+    try {
+      const monitor = await requestService.getMonitorStatus()
+      if (monitor?.servicios) {
+        servicios.value = { ...servicios.value, ...monitor.servicios }
       } else {
         marcarServiciosDesconectados()
-      }
-      if (status?.metricas) {
-        metricas.value = { ...metricas.value, ...status.metricas }
       }
     } catch {
       marcarServiciosDesconectados()
@@ -141,7 +152,19 @@ export const useRequestStore = defineStore('requestStore', () => {
 
   // Prueba explícita para HU-08 (Demostración de Cache Hit vs Cache Miss)
   const testCacheQuery = async () => {
-    return await fetchSolicitudes()
+    loading.value = true
+    try {
+      const res = await requestService.getEstadisticas()
+      if (res?.cacheInfo) {
+        cacheInfo.value = res.cacheInfo
+        cacheHistory.value.unshift(res.cacheInfo)
+        if (cacheHistory.value.length > 10) cacheHistory.value.pop()
+      }
+    } catch (err) {
+      error.value = err.message || 'Error al consultar estadísticas'
+    } finally {
+      loading.value = false
+    }
   }
 
   const crearSolicitud = async (nueva) => {

@@ -32,6 +32,8 @@ export const env = {
   // para avisarle al backend que cambió el estado de una solicitud. El backend
   // se suscribe y retransmite por Socket.IO a los clientes Vue conectados.
   REDIS_EVENTS_CHANNEL: process.env.REDIS_EVENTS_CHANNEL || 'taskflow:eventos',
+  // Clave Redis que el Worker actualiza como "heartbeat" (usada por GET /api/monitor).
+  REDIS_WORKER_HEARTBEAT_KEY: process.env.REDIS_WORKER_HEARTBEAT_KEY || 'taskflow:worker:heartbeat',
   CACHE_TTL_SECONDS: Number(process.env.CACHE_TTL_SECONDS) || 60,
   CACHE_KEY_ESTADISTICAS: 'taskflow:cache:estadisticas',
   CACHE_KEY_SOLICITUDES_LISTADO: 'taskflow:cache:solicitudes:listado',
