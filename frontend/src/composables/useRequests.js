@@ -12,7 +12,7 @@ export const useRequests = () => {
     error.value = null
     try {
       const data = await requestService.getSolicitud(id)
-      const obj = data.solicitud || data
+      const obj = data.data || data.solicitud || data
       store.upsertSolicitud(obj)
       return obj
     } catch (err) {

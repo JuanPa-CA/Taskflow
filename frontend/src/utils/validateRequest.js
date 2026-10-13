@@ -6,7 +6,13 @@ export const CATEGORIAS_VALIDAS = [
   'Actualización'
 ]
 
-export const PRIORIDADES_VALIDAS = ['Alta', 'Media', 'Baja']
+export const PRIORIDADES = [
+  { valor: 'baja', etiqueta: 'Baja' },
+  { valor: 'media', etiqueta: 'Media' },
+  { valor: 'alta', etiqueta: 'Alta' }
+]
+
+export const PRIORIDADES_VALIDAS = PRIORIDADES.map((p) => p.valor)
 
 export const validateRequest = (datos) => {
   const errores = {}

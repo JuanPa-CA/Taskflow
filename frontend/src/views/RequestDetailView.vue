@@ -225,7 +225,7 @@ const cargarDetalle = async () => {
   error.value = null
   try {
     const data = await requestService.getSolicitud(id.value)
-    const item = data.solicitud || data
+    const item = data.data || data.solicitud || data
     store.upsertSolicitud(item)
   } catch (err) {
     error.value = err.response?.data?.mensaje || err.message || 'No se pudo cargar la solicitud'

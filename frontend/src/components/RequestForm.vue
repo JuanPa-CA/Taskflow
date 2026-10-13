@@ -64,8 +64,8 @@
             :disabled="submitting"
           >
             <option value="" disabled>Seleccione prioridad</option>
-            <option v-for="prio in PRIORIDADES_VALIDAS" :key="prio" :value="prio">
-              {{ prio }}
+            <option v-for="p in PRIORIDADES" :key="p.valor" :value="p.valor">
+              {{ p.etiqueta }}
             </option>
           </select>
           <span v-if="errors.prioridad" class="form-error">{{ errors.prioridad }}</span>
@@ -114,7 +114,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CATEGORIAS_VALIDAS, PRIORIDADES_VALIDAS, validateRequest } from '@/utils/validateRequest'
+import { CATEGORIAS_VALIDAS, PRIORIDADES, validateRequest } from '@/utils/validateRequest'
 import { useRequestStore } from '@/store/requestStore'
 
 const router = useRouter()
@@ -125,7 +125,7 @@ const emit = defineEmits(['form-submit', 'cancel'])
 const form = reactive({
   titulo: '',
   categoria: '',
-  prioridad: 'Media',
+  prioridad: 'media',
   descripcion: ''
 })
 
