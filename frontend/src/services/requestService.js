@@ -46,13 +46,25 @@ export const requestService = {
     return response.data
   },
 
-  async getMonitorStatus() {
-    try {
-      const response = await apiClient.get('/monitor')
-      return response.data
-    } catch {
-      // Fallback if backend does not have /monitor endpoint yet
-      return null
+  async getEstadisticas() {
+    const startTime = performance.now()
+    const response = await apiClient.get('/estadisticas')
+    const timeMs = Math.round(performance.now() - startTime)
+    const origen = response.data?.origen
+    const hit = origen === 'cache'
+    return {
+      data: response.data?.data,
+      cacheInfo: {
+        hit,
+        source: hit ? 'REDIS (CACHE HIT)' : 'MONGODB (CACHE MISS)',
+        timeMs,
+        fecha: new Date().toLocaleTimeString('es-CO')
+      }
     }
+  },
+
+  async getMonitorStatus() {
+    const response = await apiClient.get('/monitor')
+    return { servicios: response.data?.servicios }
   }
 }

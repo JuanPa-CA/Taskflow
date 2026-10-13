@@ -9,6 +9,7 @@ import { ESTADOS, EVENTOS } from './config/constants.js';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let running = true;
+let heartbeatInterval = null;
 
 /**
  * Simula que el procesamiento toma un momento (1-3 segundos) para que en la
@@ -99,6 +100,24 @@ async function publicarColaActualizada() {
 }
 
 /**
+ * Heartbeat para el Monitor: escribe (o refresca) la clave que el backend
+ * consulta en GET /api/monitor para saber si el Worker está vivo.
+ * Un fallo de Redis aquí jamás debe tumbar el worker, por eso el try/catch.
+ */
+async function publicarHeartbeat() {
+  try {
+    await publisherClient.set(
+      env.REDIS_WORKER_HEARTBEAT_KEY,
+      Date.now().toString(),
+      'EX',
+      15
+    );
+  } catch (err) {
+    console.warn(`[worker] no se pudo escribir el heartbeat: ${err.message}`);
+  }
+}
+
+/**
  * Loop principal: BRPOP bloqueante (sin polling) sobre REDIS_QUEUE_KEY.
  */
 async function iniciarLoop() {
@@ -129,6 +148,7 @@ function shutdown(signal) {
   if (!running) return;
   console.log(`[worker] señal ${signal} recibida, cerrando de forma ordenada...`);
   running = false;
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
   // disconnect() interrumpe el BRPOP pendiente para que el loop termine ya.
   redisClient.disconnect();
   publisherClient.disconnect();
@@ -140,8 +160,14 @@ async function main() {
   await esperarRedis(publisherClient, 'publicador');
 
   console.log('[worker] TaskFlow Worker iniciado correctamente');
+
+  // Heartbeat para el Monitor: se escribe al arrancar y luego cada 5 s.
+  await publicarHeartbeat();
+  heartbeatInterval = setInterval(publicarHeartbeat, 5000);
+
   await iniciarLoop();
 
+  clearInterval(heartbeatInterval);
   await disconnectDB();
 }
 
