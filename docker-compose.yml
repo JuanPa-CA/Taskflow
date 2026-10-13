@@ -1,0 +1,99 @@
+# TaskFlow - orquestación completa
+# Uso:  docker compose up --build
+#
+# Los servicios se hablan por NOMBRE DE SERVICIO (mongoserver, redisserver),
+# nunca por localhost. Solo el navegador usa localhost (puertos publicados).
+#
+# Puertos publicados (se pueden cambiar con un archivo .env junto a este compose):
+#   BACKEND_PORT  (default 4000)  -> API Express + Socket.IO
+#   FRONTEND_PORT (default 8080)  -> Frontend (Nginx)
+
+services:
+  mongoserver:
+    image: mongo:7
+    container_name: taskflow-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redisserver:
+    image: redis:7-alpine
+    container_name: taskflow-redis
+    restart: unless-stopped
+    # appendonly: la cola (lista de Redis) sobrevive a un reinicio del contenedor
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: taskflow-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: ${BACKEND_PORT:-4000}
+      MONGO_URI: mongodb://mongoserver:27017/taskflow
+      REDIS_HOST: redisserver
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_QUEUE_KEY: taskflow:queue:solicitudes
+      REDIS_EVENTS_CHANNEL: taskflow:eventos
+      # Origen desde el que el NAVEGADOR carga el frontend (para CORS y Socket.IO)
+      CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-8080}
+    ports:
+      - "${BACKEND_PORT:-4000}:${BACKEND_PORT:-4000}"
+    depends_on:
+      mongoserver:
+        condition: service_healthy
+      redisserver:
+        condition: service_healthy
+
+  worker:
+    build: ./worker
+    container_name: taskflow-worker
+    # Si Mongo/Redis fallan o el proceso sale con error, Docker lo vuelve a levantar
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongoserver:27017/taskflow
+      REDIS_HOST: redisserver
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      # DEBEN ser idénticos a los del backend
+      REDIS_QUEUE_KEY: taskflow:queue:solicitudes
+      REDIS_EVENTS_CHANNEL: taskflow:eventos
+    depends_on:
+      mongoserver:
+        condition: service_healthy
+      redisserver:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Vite incrusta estas variables al COMPILAR; las usa el navegador,
+        # por eso apuntan a localhost + puerto publicado del backend.
+        VITE_API_URL: http://localhost:${BACKEND_PORT:-4000}/api
+        VITE_SOCKET_URL: http://localhost:${BACKEND_PORT:-4000}
+    container_name: taskflow-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  redis_data:
