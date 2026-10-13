@@ -3,6 +3,13 @@
 FROM node:20-alpine AS build-stage
 WORKDIR /app
 
+# Variables de Vite: se incrustan en el bundle durante "npm run build".
+# Llegan como build args desde docker-compose.yml.
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
+
 # Instalar dependencias aprovechando la caché de capas de Docker
 COPY package*.json ./
 RUN npm install
