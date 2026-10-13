@@ -49,6 +49,11 @@ export const EVENTOS = Object.freeze({
 
 export const EVENTOS_VALIDOS = Object.values(EVENTOS);
 
+// Texto disparador para simular un error de procesamiento (HU-11).
+// Si el título o la descripción de una solicitud contiene este texto,
+// el worker lanza un error controlado que termina en estado ERROR.
+export const TEXTO_SIMULAR_ERROR = '[simular-error]';
+
 export default {
   ESTADOS,
   ESTADOS_VALIDOS,
@@ -58,4 +63,5 @@ export default {
   CATEGORIAS_VALIDAS,
   EVENTOS,
   EVENTOS_VALIDOS,
+  TEXTO_SIMULAR_ERROR,
 };
