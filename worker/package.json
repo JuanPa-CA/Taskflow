@@ -1,0 +1,19 @@
+{
+  "name": "taskflow-worker",
+  "version": "1.0.0",
+  "description": "Worker de TaskFlow: consume la cola de Redis (BRPOP), procesa solicitudes y publica eventos",
+  "type": "module",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js",
+    "dev": "node --watch worker.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.1",
+    "mongoose": "^8.5.0"
+  }
+}
