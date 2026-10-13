@@ -4,7 +4,7 @@ import { redisClient, publisherClient, esperarRedis } from './config/redis.js';
 import { Solicitud } from './models/Solicitud.js';
 import { generarRespuesta } from './services/reglas.service.js';
 import { publicarEvento } from './services/publisher.service.js';
-import { ESTADOS, EVENTOS } from './config/constants.js';
+import { ESTADOS, EVENTOS, TEXTO_SIMULAR_ERROR } from './config/constants.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -20,6 +20,16 @@ async function simularTrabajo() {
   const segundos = 1 + Math.floor(Math.random() * 3);
   console.log(`[worker] simulando trabajo de ${segundos}s...`);
   await sleep(segundos * 1000);
+}
+
+/**
+ * Detecta si una solicitud debe forzar un error de procesamiento (HU-11).
+ * El texto disparador se define como constante en config/constants.js
+ * (no se escribe suelto en este archivo).
+ */
+function esSimulacionDeError(solicitud) {
+  const texto = `${solicitud?.titulo ?? ''} ${solicitud?.descripcion ?? ''}`.toLowerCase();
+  return texto.includes(TEXTO_SIMULAR_ERROR.toLowerCase());
 }
 
 /**
@@ -58,6 +68,13 @@ async function procesarSolicitud(id) {
     console.log(`[worker] procesando ${id} (${solicitud.categoria})`);
     await publicar(EVENTOS.SOLICITUD_PROCESANDO, solicitud.toJSON());
 
+    // Simulación de error controlado (HU-11): si el título o la descripción
+    // contiene el texto disparador, se lanza un error para pasar por el catch
+    // y terminar en estado ERROR sin detener el loop.
+    if (esSimulacionDeError(solicitud)) {
+      throw new Error('Fallo simulado de procesamiento');
+    }
+
     // 3. Regla de negocio por categoría (con demora simulada).
     await simularTrabajo();
     const respuesta = generarRespuesta(solicitud);
@@ -75,8 +92,9 @@ async function procesarSolicitud(id) {
     console.error(`[worker] error en ${id}: ${err.message}`);
     try {
       solicitud.estado = ESTADOS.ERROR;
-      solicitud.mensajeError =
-        'No fue posible procesar la solicitud. Inténtalo nuevamente o contacta a soporte.';
+      solicitud.mensajeError = esSimulacionDeError(solicitud)
+        ? 'Fallo simulado de procesamiento (demostración HU-11).'
+        : 'No fue posible procesar la solicitud. Inténtalo nuevamente o contacta a soporte.';
       solicitud.fechaProcesamiento = new Date();
       await solicitud.save();
       await publicar(EVENTOS.SOLICITUD_ERROR, solicitud.toJSON());
