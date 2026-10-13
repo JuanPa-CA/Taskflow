@@ -65,8 +65,8 @@
         <span class="filter-label">Prioridad:</span>
         <select v-model="store.filtros.prioridad" class="filter-select">
           <option value="">Todas</option>
-          <option v-for="prio in PRIORIDADES_VALIDAS" :key="prio" :value="prio">
-            {{ prio }}
+          <option v-for="p in PRIORIDADES" :key="p.valor" :value="p.valor">
+            {{ p.etiqueta }}
           </option>
         </select>
       </div>
@@ -144,7 +144,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRequestStore } from '@/store/requestStore'
-import { CATEGORIAS_VALIDAS, PRIORIDADES_VALIDAS } from '@/utils/validateRequest'
+import { CATEGORIAS_VALIDAS, PRIORIDADES } from '@/utils/validateRequest'
 import TableSolicitudes from '@/components/TableSolicitudes.vue'
 import RequestCard from '@/components/RequestCard.vue'
 

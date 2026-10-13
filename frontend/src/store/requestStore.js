@@ -4,6 +4,7 @@ import { requestService } from '@/services/requestService'
 
 export const useRequestStore = defineStore('requestStore', () => {
   const solicitudes = ref([])
+  const total = ref(0)
   const loading = ref(false)
   const error = ref(null)
 
@@ -65,7 +66,7 @@ export const useRequestStore = defineStore('requestStore', () => {
   }
 
   // Computed counts
-  const totalSolicitudes = computed(() => solicitudes.value.length)
+  const totalSolicitudes = computed(() => total.value || solicitudes.value.length)
   const pendientesCount = computed(() => solicitudes.value.filter(s => s.estado === 'PENDIENTE').length)
   const enColaCount = computed(() => solicitudes.value.filter(s => s.estado === 'EN COLA').length)
   const procesandoCount = computed(() => solicitudes.value.filter(s => s.estado === 'PROCESANDO').length)
@@ -97,7 +98,9 @@ export const useRequestStore = defineStore('requestStore', () => {
     try {
       const res = await requestService.getSolicitudes(filtros.value)
       const data = res?.data !== undefined ? res.data : res
-      solicitudes.value = Array.isArray(data) ? data : (data.solicitudes || [])
+      const items = Array.isArray(data) ? data : (data.items || data.solicitudes || [])
+      solicitudes.value = items
+      total.value = typeof data.total === 'number' ? data.total : items.length
       
       if (res?.cacheInfo) {
         cacheInfo.value = res.cacheInfo
@@ -146,7 +149,7 @@ export const useRequestStore = defineStore('requestStore', () => {
     error.value = null
     try {
       const creada = await requestService.crearSolicitud(nueva)
-      const obj = creada.solicitud || creada
+      const obj = creada.data || creada.solicitud || creada
       upsertSolicitud(obj)
       addLog('creada', `Solicitud creada: "${obj.titulo}" (ID: ${obj._id || obj.id})`)
       addToast('success', `Solicitud #${(obj._id || obj.id || '').toString().slice(-6)} registrada con éxito`)
