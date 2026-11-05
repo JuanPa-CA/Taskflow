@@ -5,6 +5,8 @@ import { Solicitud } from './models/Solicitud.js';
 import { generarRespuesta } from './services/reglas.service.js';
 import { publicarEvento } from './services/publisher.service.js';
 import { ESTADOS, EVENTOS, TEXTO_SIMULAR_ERROR } from './config/constants.js';
+import http from 'node:http';
+http.createServer((req, res) => res.end('ok')).listen(process.env.PORT || 10000);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -198,3 +200,4 @@ main()
     console.error('[worker] error fatal:', err);
     process.exit(1);
   });
+
